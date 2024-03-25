@@ -1,5 +1,7 @@
 package exercises
 
+import com.sun.org.apache.xerces.internal.dom.ElementNSImpl
+
 import scala.annotation.tailrec
 
 trait MySet[A] extends (A => Boolean) {
@@ -12,12 +14,25 @@ trait MySet[A] extends (A => Boolean) {
 
   def contains(a: A): Boolean
   def +(elem: A): MySet[A]
-  def ++(anotherSet: MySet[A]): MySet[A]
+  def ++(anotherSet: MySet[A]): MySet[A] //union
 
   def map[B](f: A => B): MySet[B]
   def flatMap[B](f: A => MySet[B]): MySet[B]
   def filter(predicate: A => Boolean): MySet[A]
   def foreach(f: A => Unit): Unit
+
+  /*
+   Exercise
+  - removing an element
+  - intersection with another set
+  - difference with another set
+   */
+  def -(elem: A): MySet[A]
+  def --(anotherSet: MySet[A]): MySet[A] //difference
+  def &(anotherSet: MySet[A]): MySet[A] // intersection
+
+  // Exercise #3 - implement a unary_! = Negation of a set
+  def unary_! : MySet[A]
 }
 
 class EmptySet[A] extends MySet[A] {
@@ -29,6 +44,40 @@ class EmptySet[A] extends MySet[A] {
   def flatMap[B](f: A => MySet[B]): MySet[B] = new EmptySet[B]
   def filter(predicate: A => Boolean): MySet[A] =new EmptySet[A]
   def foreach(f: A => Unit): Unit = ()
+
+  //part 2
+  def -(elem: A): MySet[A] = this
+  def --(anotherSet: MySet[A]): MySet[A] = this
+  def &(anotherSet: MySet[A]): MySet[A] = this
+  def unary_! : MySet[A] = new PropertyBasedSet[A](_ => true)
+  
+}
+
+//all elements of type A which satisfy a property
+// { x in A | property(x) }
+class PropertyBasedSet[A](property: A => Boolean) extends MySet[A] {
+  override def contains(elem: A): Boolean = property(elem)
+  // { x in A | property(x) } + element = { x in A | property(x) || x == element }
+  override def +(elem: A): MySet[A] =
+    new PropertyBasedSet[A](x => property(x) || x == elem)
+
+  // { x in A | property(x) } ++ set => { x in A | property(x) || set contains x }
+  override def ++(anotherSet: MySet[A]): MySet[A] =
+    new PropertyBasedSet[A](x => property(x) || anotherSet(x))
+
+  // all integers => (_ % 3) => [0 1 2] it's not possible to know if it's a finite set
+  override def map[B](f: A => B): MySet[B] = politelyFail
+  override def flatMap[B](f: A => MySet[B]): MySet[B] = politelyFail
+  override def foreach(f: A => Unit): Unit = politelyFail
+
+  override def filter(predicate: A => Boolean): MySet[A] = new PropertyBasedSet[A](x => property(x) && predicate(x))
+  override def -(elem: A): MySet[A] = filter(x => x != elem)
+  override def --(anotherSet: MySet[A]): MySet[A] = filter(!anotherSet)
+  override def &(anotherSet: MySet[A]): MySet[A] = filter(anotherSet)
+
+  override def unary_! : MySet[A] = new PropertyBasedSet[A](x => !property(x))
+
+  def politelyFail = throw new IllegalAccessException("Really deep rabbit hole")
 }
 
 class NonEmptySet[A](head: A, tail: MySet[A]) extends MySet[A] {
@@ -60,6 +109,15 @@ class NonEmptySet[A](head: A, tail: MySet[A]) extends MySet[A] {
     f(head)
     tail foreach f
   }
+
+  // part 2
+  def -(elem: A): MySet[A] =
+    if(head == elem) tail
+    else tail - elem + head
+
+  def --(anotherSet: MySet[A]): MySet[A] = filter(!anotherSet)
+  def &(anotherSet: MySet[A]): MySet[A] = filter(anotherSet) // intersection = filtering!
+  def unary_! : MySet[A] = new PropertyBasedSet[A](x  => !this.contains(x))
 }
 
 object MySet {
@@ -83,5 +141,15 @@ object MySet {
 object MySetPlayground extends App {
   val s = MySet(1,2,3,4)
   s + 5 ++ MySet(-1, -2) + 3 flatMap (x => MySet(x, 10 * x)) filter (_% 2 == 0) foreach println
+  
+  val negative = !s // s.unary_! = all the naturals not equal to 1,2,3,4
+  println(negative(2))
+  println(negative(5))
+  
+  val negativeEven = negative.filter(_ % 2 == 0)
+  println(negativeEven(5))
+  
+  val negativeEven5 = negativeEven + 5 // all the even numbers > 4 + 5
+  println(negativeEven5(5))
 }
 
