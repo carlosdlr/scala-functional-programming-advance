@@ -57,11 +57,11 @@ object TypeMembers extends App {
 
   // enforce types ad compile time for the previous custom lists using type number
   // type members and type member constraints (bounds)
-  class CustomList(hd: String, tl: CustomList) extends MList with ApplicableToNumbers {
-    type A = String
-    def head: String = hd
-    def tail: CustomList = tl
-  }
+//  class CustomList(hd: String, tl: CustomList) extends MList with ApplicableToNumbers {
+//    type A = String
+//    def head: String = hd
+//    def tail: CustomList = tl
+//  }
 
   class IntList(hd: Int, tl: IntList) extends MList {
     type A = Int

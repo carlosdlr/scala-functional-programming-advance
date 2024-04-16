@@ -54,9 +54,9 @@ object PathDependentTypes extends App {
   trait IntItem extends Item[Int]
   trait StringItem extends Item[String]
   
-  def get[ItemType <: ItemLike](key: ItemType#Key): ItemType = ??? 
+  //def get[ItemType <: ItemLike](key: ItemType#Key): ItemType = ???
   
-  get[IntItem](42) // ok
-  get[StringItem]("home") // ok
+  //get[IntItem](42) // ok
+  //get[StringItem]("home") // ok
   //get[InItem]("Scala") // not ok
 }
